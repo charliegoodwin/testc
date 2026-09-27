@@ -75,7 +75,7 @@ int main(void)
         request[received] = '\0';
     }
 
-    const char response[] =
+    const char default_response[] =
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: text/plain; charset=utf-8\r\n"
         "Content-Length: 10\r\n"
@@ -83,10 +83,25 @@ int main(void)
         "\r\n"
         " test http";
 
+    const char health_response[] =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain; charset=utf-8\r\n"
+        "Content-Length: 22\r\n"
+        "Connection: close\r\n"
+        "\r\n"
+        "testing a pull request";
+
+    char path[sizeof(request)] = {0};
+    sscanf(request, "%*s %8191s", path);
+    path[strcspn(path, "?")] = '\0';
+    const char *response = strcmp(path, "/health") == 0
+                               ? health_response : default_response;
+    size_t response_length = strlen(response);
+
     size_t sent = 0;
-    while (sent < sizeof(response) - 1) {
+    while (sent < response_length) {
         ssize_t count = send(client_fd, response + sent,
-                             sizeof(response) - 1 - sent, MSG_NOSIGNAL);
+                             response_length - sent, MSG_NOSIGNAL);
         if (count == -1 && errno == EINTR) {
             continue;
         }
@@ -114,5 +129,5 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    return EXIT_SUCCESS; /*testing!!!!*/
 }
