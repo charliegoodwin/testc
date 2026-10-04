@@ -6,8 +6,25 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    long port = 8080;
+    if (argc > 2) {
+        fprintf(stderr, "Usage: %s [port]\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+    if (argc == 2) {
+        char *end;
+        errno = 0;
+        port = strtol(argv[1], &end, 10);
+        if (argv[1][0] == '\0' ||
+            strspn(argv[1], "0123456789") != strlen(argv[1]) ||
+            *end != '\0' || errno == ERANGE || port < 1 || port > 65535) {
+            fputs("Port must be a number between 1 and 65535.\n", stderr);
+            return EXIT_FAILURE;
+        }
+    }
+
     int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd == -1) {
         perror("socket");
@@ -16,7 +33,7 @@ int main(void)
 
     struct sockaddr_in address = {0};
     address.sin_family = AF_INET;
-    address.sin_port = htons(8080);
+    address.sin_port = htons((unsigned short)port);
     address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     if (bind(socket_fd, (struct sockaddr *)&address, sizeof(address)) == -1) {
